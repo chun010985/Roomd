@@ -194,7 +194,7 @@
                 <div class="japanese-card p-6 shadow-sm">
                     <div class="flex items-center gap-3 mb-6 font-bold text-stone-600">
                         <span class="w-1 h-5 bg-stone-400"></span>
-                        <h2 class="text-md tracking-wider">訂房資料</h2>
+                        <h2 class="text-md tracking-wider">訂房細節錄入</h2>
                     </div>
                     
                     <!-- 旅館資訊 -->
@@ -272,7 +272,6 @@
                 <div class="japanese-card p-6 flex flex-col h-[calc(100vh-160px)] sticky top-8 shadow-sm text-sm">
                     <div class="flex justify-between items-center mb-4 pb-2 border-b">
                         <h2 class="text-xs font-bold text-stone-500 tracking-[0.2em] uppercase">摘要預覽</h2>
-                        <!-- 新增：全刪除 (清空) 功能 -->
                         <button @click="clearAllData" class="text-red-400 hover:text-red-600 flex items-center gap-1" title="清空所有資料">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                             <span class="text-[10px] font-bold">清空</span>
@@ -280,7 +279,6 @@
                     </div>
                     
                     <div class="flex-1 overflow-y-auto space-y-4">
-                        <!-- 即時摘要資訊與編輯快捷鍵 -->
                         <div class="bg-stone-50 p-4 rounded border border-stone-200 space-y-3">
                             <div class="flex justify-between items-start group">
                                 <div>
@@ -369,9 +367,18 @@
                     <div class="px-4 mb-6"><p class="font-bold text-[10px] text-stone-700 uppercase tracking-tighter mb-1">備註 Remakrs：</p><p class="text-[9.5px] text-stone-800 leading-relaxed font-medium">本訂房案經閣下同意保證住房，不得變更姓名、日期、取消或縮短泊數。<br>行程中有任何更改或發生取消訂房時，請務必通知本公司代為辦理，否則本公司須收一晚住房費用。</p></div>
                     <div class="flex justify-between items-center px-4 pt-6 border-t border-stone-100 mb-6">
                         <div class="flex flex-col gap-1.5 text-[10px] text-stone-500">
-                            <div class="flex items-center gap-2"><span class="w-28 font-bold text-stone-400 uppercase">Sales Contact:</span><span class="text-stone-800 font-normal border-b border-stone-100 pb-0.5 px-1">{{ filteredSalesContact }}</span></div>
-                            <div class="flex items-center gap-2"><span class="w-28 font-bold text-stone-400 uppercase">Booked By:</span><span class="text-stone-800 font-normal border-b border-stone-100 pb-0.5 px-1">{{ hotelInfo.bookedBy }}</span></div>
-                            <div class="flex items-center gap-2"><span class="w-28 font-bold text-stone-400 uppercase">Payment By:</span><span class="text-stone-800 font-normal border-b border-stone-100 pb-0.5 px-1">{{ hotelInfo.paymentBy }}</span></div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-28 font-bold text-stone-400 uppercase">Sales Contact:</span>
+                                <span class="text-stone-800 font-normal border-b border-stone-100 pb-0.5 px-1">{{ hotelInfo.salesContact }}</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-28 font-bold text-stone-400 uppercase">Booked By:</span>
+                                <span class="text-stone-800 font-normal border-b border-stone-100 pb-0.5 px-1">{{ hotelInfo.bookedBy }}</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-28 font-bold text-stone-400 uppercase">Payment By:</span>
+                                <span class="text-stone-800 font-normal border-b border-stone-100 pb-0.5 px-1">{{ hotelInfo.paymentBy }}</span>
+                            </div>
                         </div>
                         <div class="stamp-area"><img src="https://cdn.discordapp.com/attachments/1358167732368965882/1463400264223690796/1768972198423.jpg?ex=6971b133&is=69705fb3&hm=7b2b3ec0a81c91aa2fd924c09ed9f3d1f3ee79302ce12db57180ffcf3dfe9d7b&" class="stamp-image" alt="Authorized Stamp"></div>
                     </div>
@@ -398,7 +405,7 @@
                     bookingNo: '', 
                     paxName: '', 
                     paxGender: '先生/女士', 
-                    paxPhone: '', // 預設空白
+                    paxPhone: '', 
                     checkIn: '2026-02-20', 
                     checkOut: '2026-02-21', 
                     nightsText: '兩天一夜',
@@ -407,8 +414,8 @@
                     roomList: [], 
                     requests: '', 
                     selectedTags: ['依房型人數提供早餐'],
-                    bookedBy: '五福旅行社/陳侑君', 
-                    salesContact: '五福旅行社/留白填寫', 
+                    bookedBy: '五福旅行社｜陳侑君', 
+                    salesContact: '五福旅行社｜', 
                     paymentBy: '五福旅行社'
                 };
 
@@ -420,20 +427,6 @@
                     hotelInfo.selectedTags = ['依房型人數提供早餐'];
                     showToast("資料已全數清空");
                 };
-
-                const focusField = (refName) => {
-                    const el = document.querySelector(`[ref="${refName}"]`) || document.getElementsByName(refName)[0];
-                    // 由於 Vue 3 在 setup 中使用 refs 較特殊，我們直接透過 DOM 或給予 input 特定 id/ref
-                    // 這裡簡單處理：直接聚焦
-                    const target = document.querySelector(`input[v-model*="${refName.replace('Input','')}"]`) || 
-                                 document.querySelector(`input[placeholder*="${refName.replace('Input','')}"]`);
-                    // 配合 template 中的 ref
-                };
-
-                // 過濾業務人員顯示文字
-                const filteredSalesContact = computed(() => {
-                    return hotelInfo.salesContact.replace('留白填寫', '').trim();
-                });
 
                 const addRoom = () => {
                     if (newRoomInput.value.trim()) {
@@ -492,6 +485,14 @@
                     setTimeout(() => { if(toastMsg.value === msg) toastMsg.value = ''; }, 3000);
                 };
 
+                // 生成檔案名稱邏輯
+                const generateFileName = (ext) => {
+                    const datePrefix = hotelInfo.checkIn ? hotelInfo.checkIn.replace(/-/g, '') : '未定日期';
+                    const pax = hotelInfo.paxName || '未定旅客';
+                    const hotel = hotelInfo.hotelName || '未定飯店';
+                    return `${datePrefix}${pax}-${hotel}訂房確認單.${ext}`;
+                };
+
                 const downloadHotelPDF = () => {
                     const node = document.getElementById('hotel-image-node');
                     showToast("正在產生 PDF...");
@@ -499,7 +500,7 @@
                         const imgData = canvas.toDataURL('image/jpeg', 0.95);
                         const pdf = new jspdf.jsPDF('p', 'mm', 'a4');
                         pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
-                        pdf.save(`訂房單_${hotelInfo.paxName || '未命名'}.pdf`);
+                        pdf.save(generateFileName('pdf'));
                         showToast("PDF 下載成功");
                     });
                 };
@@ -507,15 +508,13 @@
                 const downloadHotelImage = () => {
                     html2canvas(document.getElementById('hotel-image-node'), { scale: 3, useCORS: true }).then(canvas => {
                         const a = document.createElement('a');
-                        a.download = `訂房單_${hotelInfo.paxName || '未命名'}_A4.png`;
+                        a.download = generateFileName('png');
                         a.href = canvas.toDataURL("image/png"); a.click();
                         showToast("圖片下載成功");
                     });
                 };
 
-                // 輔助方法：聚焦到左側輸入框
                 const focusFieldProxy = (fieldRef) => {
-                    // Vue 3 setup 內獲取 ref
                     const el = document.querySelector(`[ref="${fieldRef}"]`);
                     if (el) {
                         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -526,7 +525,7 @@
                 return { 
                     today, toastMsg,
                     hotelInfo, newRoomInput, fullHotelRequestsText, manualTimestamp,
-                    formattedHotelCheckIn, formattedHotelCheckOut, filteredSalesContact,
+                    formattedHotelCheckIn, formattedHotelCheckOut,
                     addRoom, removeRoom, editRoom, addCustomRequest, removeCustomTag, editRequest, 
                     downloadHotelImage, downloadHotelPDF, clearAllData, focusField: focusFieldProxy
                 };
