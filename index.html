@@ -63,22 +63,23 @@
 
         [v-cloak] { display: none; }
         
-        /* 印章區域 - 3x4公分，含淺藍色邊框 (#d1e2f0) */
+        /* 印章區域設定 - 自動適應圖片寬度 */
         .stamp-area {
-            width: 40mm;
-            height: 30mm;
-            display: flex;
+            /* width: 40mm; 移除固定寬度 */
+            height: 30mm; /* 固定高度，確保版面不亂 */
+            display: inline-flex; /* 讓容器寬度隨內容(圖片)縮放 */
             align-items: center;
             justify-content: center;
-            position: relative;
             border: 1px solid #d1e2f0; 
             border-radius: 2px;
+            padding: 2px;
+            background-color: transparent;
         }
         .stamp-image {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            mix-blend-mode: multiply;
+            height: 100%; /* 高度撐滿容器的 30mm */
+            width: auto;  /* 寬度自動依比例調整 */
+            mix-blend-mode: multiply; 
+            display: block;
         }
         
         /* A4 排版核心 - 精緻商務風 */
@@ -321,7 +322,8 @@
             <div id="hotel-image-node" class="capture-node">
                 <!-- 頁首 -->
                 <div class="brand-header-exquisite">
-                    <img src="https://cdn.discordapp.com/attachments/1358167732368965882/1463394638852395040/1768970854813.png?ex=6971abf6&is=69705a76&hm=2056dbf1e8aa2b9f264c34d10f3ffb6b278d5e9f6d47490e28b9c5ccb1d791db&" class="main-logo-img" alt="Lifetour Logo">
+                    <!-- Placeholder Logo (Safe fallback) -->
+                    <img src="https://placehold.co/300x80/238FD1/ffffff?text=LIFETOUR+LOGO" class="main-logo-img" alt="Lifetour Logo">
                     <div class="doc-title-group">
                         <h1 class="doc-title-main">訂房確認單</h1>
                         <p class="doc-title-sub">Hotel Booking Confirmation</p>
@@ -387,18 +389,21 @@
                         <div class="flex flex-col gap-1.5 text-[10px] text-stone-500">
                             <div class="flex items-center gap-2">
                                 <span class="w-28 font-bold text-stone-400 uppercase">Sales Contact:</span>
-                                <span class="text-stone-800 font-normal border-b border-stone-100 pb-0.5 px-1">{{ hotelInfo.salesContact }}</span>
+                                <!-- 移除了 border-b border-stone-100 pb-0.5 -->
+                                <span class="text-stone-800 font-normal px-1">{{ hotelInfo.salesContact }}</span>
                             </div>
                             <div class="flex items-center gap-2">
                                 <span class="w-28 font-bold text-stone-400 uppercase">Booked By:</span>
-                                <span class="text-stone-800 font-normal border-b border-stone-100 pb-0.5 px-1">{{ hotelInfo.bookedBy }}</span>
+                                <!-- 移除了 border-b border-stone-100 pb-0.5 -->
+                                <span class="text-stone-800 font-normal px-1">{{ hotelInfo.bookedBy }}</span>
                             </div>
                             <div class="flex items-center gap-2">
                                 <span class="w-28 font-bold text-stone-400 uppercase">Payment By:</span>
-                                <span class="text-stone-800 font-normal border-b border-stone-100 pb-0.5 px-1">{{ hotelInfo.paymentBy }}</span>
+                                <!-- 移除了 border-b border-stone-100 pb-0.5 -->
+                                <span class="text-stone-800 font-normal px-1">{{ hotelInfo.paymentBy }}</span>
                             </div>
                         </div>
-                        <div class="stamp-area"><img src="https://i.ibb.co/271xL0pq/2026-01-28-181925.png" class="stamp-image" alt="Stamp"></div>
+                        <div class="stamp-area"><img src="https://i.ibb.co/DgzCcgXj/2026-01-28-181925.png" class="stamp-image" alt="Stamp"></div>
                     </div>
                     <div class="footer-website-brand">www.lifetour.com.tw</div>
                 </div>
