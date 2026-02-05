@@ -12,401 +12,686 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <!-- jsPDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <!-- Google Fonts: Noto Sans TC -->
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@100;300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
     <style>
+        /* --- 品牌色變數 --- */
+        :root {
+            --brand-primary: #009FE3; /* 品牌天藍 */
+            --brand-dark: #006896;    /* 深藍 */
+            --brand-light: #f0f9ff;   /* 極淡藍 */
+            --text-main: #1e293b;     /* 主要文字 */
+            --text-sub: #64748b;      /* 次要文字 */
+            --border-color: #cbd5e1;
+            --alert-red: #dc2626;     /* 警示紅 */
+        }
+
         body {
             font-family: 'Noto Sans TC', sans-serif;
-            background-color: #f4f4f2; 
-            color: #333333;
-            letter-spacing: 0.01em;
+            background-color: #f1f5f9;
+            color: var(--text-main);
         }
-        .japanese-card {
-            background: #ffffff;
-            border: 1px solid #e5e5e0;
-            border-radius: 4px;
+
+        /* --- UI 介面樣式 (操作區) --- */
+        .ui-panel {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
         }
         .form-label {
             font-size: 0.75rem;
-            color: #8c8c88;
-            margin-bottom: 0.2rem;
-            font-weight: 500;
-        }
-        input, select, textarea {
-            background-color: #fafaf9;
-            border: 1px solid #e5e5e0;
-            border-radius: 3px;
-            padding: 0.4rem 0.5rem;
-            font-size: 0.875rem;
-            outline: none;
-            transition: all 0.2s;
-            width: 100%;
-        }
-        input:focus, select:focus, textarea:focus {
-            background-color: #ffffff;
-            border-color: #238FD1; 
-            box-shadow: 0 0 0 1px #238FD1;
-        }
-        .btn-primary {
-            background-color: #4a4a46; 
-            color: #ffffff;
-            transition: all 0.3s;
-        }
-        .btn-primary:hover:not(:disabled) { background-color: #2a2a26; }
-        .btn-outline {
-            border: 1px solid #4a4a46; 
-            color: #4a4a46;
-            background-color: transparent;
-            transition: all 0.3s;
-        }
-        .btn-outline:hover:not(:disabled) { background-color: #4a4a46; color: #ffffff; }
-
-        [v-cloak] { display: none; }
-        
-        /* 印章區域設定 - 自動適應圖片寬度 */
-        .stamp-area {
-            /* width: 40mm; 移除固定寬度 */
-            height: 30mm; /* 固定高度，確保版面不亂 */
-            display: inline-flex; /* 讓容器寬度隨內容(圖片)縮放 */
-            align-items: center;
-            justify-content: center;
-            border: 1px solid #d1e2f0; 
-            border-radius: 2px;
-            padding: 2px;
-            background-color: transparent;
-        }
-        .stamp-image {
-            height: 100%; /* 高度撐滿容器的 30mm */
-            width: auto;  /* 寬度自動依比例調整 */
-            mix-blend-mode: multiply; 
+            color: var(--text-sub);
+            font-weight: 700;
+            margin-bottom: 4px;
             display: block;
         }
-        
-        /* A4 排版核心 - 精緻商務風 */
+        input, select {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        input:focus {
+            border-color: var(--brand-primary);
+            box-shadow: 0 0 0 2px rgba(0, 159, 227, 0.1);
+            outline: none;
+        }
+        .btn-primary {
+            background-color: var(--brand-primary);
+            color: white;
+            font-weight: bold;
+            transition: opacity 0.2s;
+        }
+        .btn-primary:hover { opacity: 0.9; }
+
+        .tag-item {
+            background: var(--brand-light);
+            color: var(--brand-dark);
+            border: 1px solid #bae6fd;
+            padding: 2px 8px;
+            border-radius: 99px;
+            font-size: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        [v-cloak] { display: none; }
+
+        /* =========================================
+           A4 文件設計 (Clean & Bold Layout)
+           ========================================= */
         .capture-node {
             width: 210mm;
             height: 297mm;
-            padding: 10mm 15mm; 
             background-color: #ffffff;
             position: relative;
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            font-size: 11px; 
-            line-height: 1.5;
-            color: #1a202c;
+            font-family: 'Noto Sans TC', sans-serif;
+            color: #333;
         }
 
-        /* 頁首設計 */
-        .brand-header-exquisite {
+        /* 1. 浮水印層 */
+        .watermark-layer {
+            position: absolute;
+            top: 55%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 50%; 
+            height: auto;
+            aspect-ratio: 1/1;
+            background-image: url('https://i.ibb.co/WWkk6YS1/image.png');
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: contain;
+            opacity: 0.5; 
+            z-index: 0;
+            pointer-events: none;
+            filter: grayscale(100%);
+        }
+
+        /* 2. 內容層 */
+        .content-layer {
+            position: relative;
+            z-index: 10;
+            padding: 0;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 頂部裝飾 */
+        .top-bar {
+            height: 12px;
+            background-color: var(--brand-primary);
+            width: 100%;
+        }
+
+        /* 標題區塊 */
+        .header-section {
+            padding: 25px 40px 10px 40px;
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            border-bottom: 2px solid #238FD1;
-            padding-bottom: 12px;
-            margin-bottom: 15px;
+            border-bottom: 1px solid #e2e8f0;
+            margin-bottom: 20px;
         }
-        .main-logo-img { height: 48px; object-fit: contain; }
-        .doc-title-main { font-size: 24px; font-weight: 700; color: #238FD1; letter-spacing: 4px; margin-bottom: -2px; }
-        .doc-title-sub { font-size: 9px; color: #718096; letter-spacing: 2px; text-transform: uppercase; }
-
-        /* 內容區塊 */
-        .booking-no-box {
-            background-color: #ebf3f7; 
-            border: 1px solid #d1e2f0;
-            border-left: 4px solid #238FD1; 
-            padding: 8px 15px;
-            margin-bottom: 15px;
+        .header-logo img {
+            height: 55px;
+            object-fit: contain;
         }
-        .booking-no-value {
-            font-size: 1.15rem; 
+        .header-title-block {
+            text-align: right;
+        }
+        .main-title {
+            font-size: 32px; 
+            font-weight: 900;
+            color: var(--brand-dark);
+            letter-spacing: 2px;
+            line-height: 1; 
+            margin-bottom: 0;
+        }
+        .sub-title {
+            font-size: 9px;
+            color: var(--brand-primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
             font-weight: 700;
-            font-family: 'Noto Sans TC', sans-serif;
-            color: #2d3748;
-            letter-spacing: 0.05em;
+            margin-top: 10px;
+            line-height: 1;
+        }
+        .issue-date {
+            font-size: 9px;
+            color: #94a3b8;
+            margin-top: 8px;
+            font-family: monospace;
         }
 
-        .section-label {
-            color: #238FD1;
-            font-size: 11px; 
-            font-weight: 700;
-            margin-bottom: 2px;
-            display: block;
+        /* 內容容器 */
+        .body-container {
+            padding: 0 40px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
         }
 
-        .stay-table { width: 100%; border-collapse: collapse; border: 1px solid #e2e8f0; margin-top: 10px; margin-bottom: 15px; }
-        .stay-table th { background-color: #f7fafc; color: #4a5568; text-align: left; padding: 10px 12px; font-size: 10px; font-weight: 700; border: 1px solid #e2e8f0; width: 140px; vertical-align: middle; }
-        .stay-table td { padding: 10px 12px; border: 1px solid #e2e8f0; color: #2d3748; font-weight: 400; text-align: left; vertical-align: middle; font-size: 12px; }
+        /* 資訊網格 */
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* 左右各半 */
+            gap: 20px;
+            margin-bottom: 25px;
+        }
 
-        .footer-website-brand { position: absolute; bottom: 2mm; left: 50%; transform: translateX(-50%); font-size: 9px; color: #a0aec0; font-family: 'Noto Sans TC', sans-serif; font-weight: 300; letter-spacing: 3px; text-transform: lowercase; }
-
-        .time-input { text-align: center; letter-spacing: 0.1em; }
-        
-        /* 標籤樣式 */
-        .tag-item {
-            background-color: #f1f5f9;
+        .info-box {
             border: 1px solid #e2e8f0;
-            padding: 2px 8px;
             border-radius: 4px;
+            overflow: hidden;
+        }
+
+        /* 修正：Info Box Header 垂直置中 */
+        .info-box-header {
+            background-color: var(--brand-light);
+            height: 32px; /* 固定高度 */
+            padding: 0 12px; /* 移除垂直 padding，改用 flex 垂直置中 */
+            border-bottom: 1px solid #e2e8f0;
             font-size: 11px;
+            font-weight: 700;
+            color: var(--brand-dark);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center; /* 確保垂直置中 */
+            gap: 6px;
+            box-sizing: border-box;
+        }
+        /* 裝飾小方塊 */
+        .header-deco {
+            width: 4px;
+            height: 12px;
+            background-color: var(--brand-primary);
+            display: inline-block;
+        }
+
+        .info-box-content {
+            padding: 12px;
+        }
+
+        .info-row {
+            display: flex;
+            margin-bottom: 8px;
+            font-size: 11px;
+            line-height: 1.5;
+            align-items: center; /* 垂直置中 */
+            border-bottom: 1px dashed #f1f5f9;
+            padding-bottom: 4px;
+        }
+        .info-row:last-child {
+            margin-bottom: 0;
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .info-label {
+            width: 80px;
+            color: #64748b;
+            font-weight: 500;
+            flex-shrink: 0;
+        }
+        .info-val {
+            color: #1e293b;
+            font-weight: 600;
+            flex: 1;
+        }
+        .info-val.mono { font-family: monospace; }
+
+        /* 修正：Booking Card 垂直置中 */
+        .booking-card {
+            background: var(--brand-primary);
+            border: 1px solid var(--brand-primary);
+            border-radius: 4px;
+            height: 36px; /* 固定高度 */
+            padding: 0 12px; /* 移除垂直 padding */
+            margin-bottom: 10px;
+            box-shadow: 0 2px 4px rgba(0, 159, 227, 0.2);
+            display: flex;
+            align-items: center; /* 確保垂直置中 */
+            justify-content: space-between;
+            box-sizing: border-box;
+        }
+        .booking-label { 
+            font-size: 10px; 
+            color: #ffffff; 
+            font-weight: 700; 
+            opacity: 0.95; 
+            line-height: 1;
+        }
+        .booking-val { 
+            font-size: 15px; 
+            font-weight: 700; 
+            color: #ffffff; 
+            font-family: monospace; 
+            letter-spacing: 1px; 
+            line-height: 1;
+        }
+
+        /* 住宿詳情表格 */
+        .table-section { margin-bottom: 25px; }
+        .table-header-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--brand-primary);
+            margin-bottom: 5px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .custom-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            border: 1px solid #cbd5e1;
+        }
+        /* 修正：表格標題 垂直置中 */
+        .custom-table th {
+            background-color: var(--brand-light);
+            color: var(--brand-dark);
+            font-weight: 700;
+            text-align: left;
+            height: 40px; /* 固定高度 */
+            padding: 0 12px; /* 移除垂直 padding */
+            border-bottom: 1px solid #cbd5e1;
+            border-right: 1px solid #cbd5e1;
+            vertical-align: middle; /* 確保垂直置中 */
+            box-sizing: border-box;
+        }
+        .custom-table td {
+            padding: 12px;
+            border-bottom: 1px solid #cbd5e1;
+            border-right: 1px solid #e2e8f0;
+            color: #334155;
+            vertical-align: middle; /* 垂直置中 */
+        }
+        .custom-table tr:last-child td { border-bottom: none; }
+        
+        .date-highlight { font-weight: 700; color: #000; font-size: 12px; }
+        .room-item { font-weight: 700; color: #1e293b; margin-bottom: 2px; }
+
+        /* 特別需求框 */
+        .requests-box {
+            min-height: 120px; 
+            font-size: 11px; 
+            color: #475569; 
+            line-height: 1.6;
+            display: block; 
+            padding-top: 5px; 
+            vertical-align: top;
+        }
+        .custom-table td.top-align {
+            vertical-align: top;
+        }
+
+        /* 注意事項 */
+        .notes-section {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 15px;
+            margin-top: auto;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+        .notes-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--brand-dark);
+            margin-bottom: 8px;
+            border-bottom: 1px solid #cbd5e1;
+            padding-bottom: 4px;
+        }
+        .notes-content {
+            font-size: 9.5px;
+            color: #475569;
+            line-height: 1.6;
+            text-align: justify;
+        }
+        /* 時間改為紅色 */
+        .time-bold { color: var(--alert-red); font-weight: 700; }
+
+        /* 備註 */
+        .remarks-text {
+            font-size: 9px;
+            color: #94a3b8;
+            margin-bottom: 20px;
+            line-height: 1.4;
+            padding-left: 8px;
+            border-left: 3px solid #cbd5e1;
+        }
+
+        /* 底部簽核 */
+        .footer-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding-top: 15px;
+            border-top: 1px solid #e2e8f0;
+            margin-bottom: 15px;
+        }
+        .signature-grid {
+            display: flex;
+            gap: 30px;
+        }
+        .sig-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .sig-label { font-size: 9px; color: #94a3b8; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; }
+        .sig-val { font-size: 11px; color: #334155; font-weight: 500; }
+
+        .stamp-area {
+            width: 180px;
+            height: 80px; 
             display: flex;
             align-items: center;
-            gap: 6px;
+            justify-content: center;
+            transform: translateY(20px); 
         }
-        .tag-action-btn {
-            padding: 2px;
-            border-radius: 2px;
-            transition: all 0.2s;
-            cursor: pointer;
-        }
-        .tag-action-btn:hover { background-color: #e2e8f0; }
+        .stamp-img { max-height: 100%; max-width: 100%; mix-blend-mode: multiply; }
 
-        /* 摘要列編輯按鈕 */
-        .summary-edit-btn {
-            padding: 2px 4px;
-            font-size: 9px;
-            color: #238FD1;
-            border: 1px solid #238FD1;
-            border-radius: 3px;
-            text-transform: uppercase;
-            font-weight: bold;
-            opacity: 0.6;
-            transition: all 0.2s;
+        .bottom-brand {
+            text-align: center;
+            font-size: 8px;
+            color: #cbd5e1;
+            font-family: monospace;
+            letter-spacing: 2px;
+            padding-bottom: 15px;
         }
-        .summary-edit-btn:hover { opacity: 1; background: #238FD1; color: white; }
     </style>
 </head>
-<body class="p-4 md:p-8 text-sm font-sans">
-    <div id="app" v-cloak class="max-w-7xl mx-auto">
+<body class="p-4 md:p-8">
+    <div id="app" v-cloak class="max-w-[1300px] mx-auto">
         
-        <div class="mb-6 border-b border-stone-300 pb-2 flex justify-between items-center">
-            <h1 class="text-xl font-bold text-stone-700">訂房確認單生成系統</h1>
-            <div class="text-[10px] text-stone-400 font-mono tracking-widest uppercase">Lifetour Internal Use Only</div>
+        <!-- App Toolbar -->
+        <div class="mb-6 flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-slate-100">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-[#009FE3] rounded flex items-center justify-center text-white font-serif font-bold text-xl">L</div>
+                <div>
+                    <h1 class="text-lg font-bold text-slate-800">訂房確認單生成系統</h1>
+                    <p class="text-xs text-slate-400">Confirmation Generator</p>
+                </div>
+            </div>
+            <div class="text-xs text-slate-400 font-mono">INTERNAL USE ONLY</div>
         </div>
 
         <!-- Toast -->
-        <div v-if="toastMsg" class="fixed top-6 left-1/2 -translate-x-1/2 z-[100] bg-gray-800/90 backdrop-blur text-white px-6 py-2.5 rounded shadow-xl text-xs flex items-center gap-3 animate-pulse">
-            <span>{{ toastMsg }}</span>
-            <button @click="toastMsg = ''">✕</button>
+        <div v-if="toastMsg" class="fixed top-8 left-1/2 -translate-x-1/2 z-[50] bg-slate-800 text-white px-6 py-2 rounded shadow-lg text-sm transition-opacity">
+            {{ toastMsg }}
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start font-sans">
-            <!-- 左側錄入區 -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            
+            <!-- Left: Inputs -->
             <div class="lg:col-span-8 space-y-6">
-                <div class="japanese-card p-6 shadow-sm">
-                    <div class="flex items-center gap-3 mb-6 font-bold text-stone-600">
-                        <span class="w-1 h-5 bg-stone-400"></span>
-                        <h2 class="text-md tracking-wider">訂房細節錄入</h2>
+                <!-- 1. Hotel Info -->
+                <div class="ui-panel p-5">
+                    <h2 class="text-sm font-bold text-[#009FE3] mb-4 pb-2 border-b border-blue-100">1. 訂房細節錄入</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div><label class="form-label">旅館名稱 Hotel</label><input v-model="hotelInfo.hotelName" type="text" placeholder="e.g. 台北凱撒大飯店"></div>
+                        <div><label class="form-label">電話 TEL</label><input v-model="hotelInfo.tel" type="text" placeholder="e.g. 02-23115151"></div>
+                        <div class="md:col-span-2"><label class="form-label">旅館地址 ADD</label><input v-model="hotelInfo.address" type="text" placeholder="地址"></div>
+                    </div>
+                </div>
+
+                <!-- 2. Booking Info -->
+                <div class="ui-panel p-5">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div class="bg-blue-50 p-3 rounded border border-blue-100">
+                            <label class="form-label text-[#006896]">訂房代號 Booking No.</label>
+                            <input v-model="hotelInfo.bookingNo" type="text" class="font-mono font-bold text-[#009FE3] border-blue-200">
+                        </div>
+                        <div>
+                            <label class="form-label">旅客姓名 PAX Name</label>
+                            <div class="flex gap-2">
+                                <input v-model="hotelInfo.paxName" type="text" class="flex-1">
+                                <select v-model="hotelInfo.paxGender" class="w-24"><option>先生</option><option>女士</option><option>先生/女士</option></select>
+                            </div>
+                        </div>
+                        <div><label class="form-label">旅客連絡電話 Phone</label><input v-model="hotelInfo.paxPhone" type="text" class="font-mono"></div>
                     </div>
                     
-                    <!-- 旅館資訊 -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                        <div class="flex flex-col"><label class="form-label">旅館名稱 Hotel</label><input type="text" ref="hotelNameInput" v-model="hotelInfo.hotelName" placeholder="例如：台北凱撒大飯店"></div>
-                        <div class="flex flex-col"><label class="form-label">電話 TEL</label><input type="text" ref="telInput" v-model="hotelInfo.tel" placeholder="例如：02-23115151"></div>
-                        <div class="flex flex-col md:col-span-2"><label class="form-label">旅館地址 ADD</label><input type="text" ref="addressInput" v-model="hotelInfo.address" placeholder="例如：台北市中正區忠孝西路一段 38號"></div>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4 border-t border-dashed border-slate-200 pt-4">
+                        <div><label class="form-label">入住日期 Check-in</label><input type="date" v-model="hotelInfo.checkIn"></div>
+                        <div><label class="form-label">退房日期 Check-out</label><input type="date" v-model="hotelInfo.checkOut"></div>
+                        <div><label class="form-label">泊數 No. of Night</label><input type="text" v-model="hotelInfo.nightsText" class="bg-slate-50 text-center"></div>
                     </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><label class="form-label">住房手續時間 Check-in Time</label><input type="text" v-model="hotelInfo.checkInTime" class="text-center"></div>
+                        <div><label class="form-label">退房手續時間 Check-out Time</label><input type="text" v-model="hotelInfo.checkOutTime" class="text-center"></div>
+                    </div>
+                </div>
 
-                    <!-- 旅客資訊 -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 border-t pt-4">
-                        <div class="flex flex-col font-mono"><label class="form-label">訂房代號 Booking No</label>
-                            <div class="flex items-center gap-1 bg-stone-50 border border-stone-100 rounded px-2"><span class="text-stone-400 text-sm">RV#</span><input type="text" ref="bookingNoInput" v-model="hotelInfo.bookingNo" class="border-none bg-transparent p-1.5 focus:ring-0"></div>
-                        </div>
-                        <div class="flex flex-col"><label class="form-label">旅客姓名 PAX Name</label><div class="flex gap-1"><input type="text" ref="paxNameInput" v-model="hotelInfo.paxName" placeholder="例如：陳侑君"><select v-model="hotelInfo.paxGender" class="w-28"><option>先生/女士</option><option>先生</option><option>女士</option></select></div></div>
-                        <div class="flex flex-col font-mono"><label class="form-label">旅客連絡電話 Phone</label><input type="text" ref="paxPhoneInput" v-model="hotelInfo.paxPhone" placeholder="預設空白"></div>
-                    </div>
-
-                    <!-- 日期與時間 -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 border-t pt-4">
-                        <div class="flex flex-col"><label class="form-label">入住日期 Check-in</label><input type="date" ref="checkInInput" v-model="hotelInfo.checkIn"></div>
-                        <div class="flex flex-col"><label class="form-label">退房日期 Check-out</label><input type="date" v-model="hotelInfo.checkOut"></div>
-                        <div class="flex flex-col"><label class="form-label">泊數 No. of Night</label><input type="text" v-model="hotelInfo.nightsText"></div>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                        <div class="flex flex-col font-mono"><label class="form-label">住房手續時間 Check-in Time</label><input type="text" v-model="hotelInfo.checkInTime" class="time-input"></div>
-                        <div class="flex flex-col font-mono"><label class="form-label">退房手續時間 Check-out Time</label><input type="text" v-model="hotelInfo.checkOutTime" class="time-input"></div>
-                    </div>
-
-                    <!-- 房間與需求 -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 border-t pt-4">
-                        <div class="flex flex-col"><label class="form-label">房間型態 Rooms (點擊 + 新增)</label>
-                            <div class="flex gap-2">
-                                <input type="text" v-model="newRoomInput" placeholder="例如：雙人房*1間" @keyup.enter="addRoom">
-                                <button @click="addRoom" class="w-12 btn-primary rounded font-bold">+</button>
+                <!-- 3. Rooms & Requests -->
+                <div class="ui-panel p-5">
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex gap-2 mb-2">
+                                <input v-model="newRoomInput" @keyup.enter="addRoom" type="text" placeholder="房間型態 Rooms (按 + 新增)" class="flex-1">
+                                <button @click="addRoom" class="btn-primary w-12 rounded">+</button>
                             </div>
-                            <div class="mt-2 flex flex-wrap gap-2">
-                                <span v-for="(room, ridx) in hotelInfo.roomList" :key="ridx" class="tag-item">
-                                    <span>{{ room }}</span>
-                                    <div class="flex items-center gap-1 border-l pl-2 border-stone-200 ml-1">
-                                        <button @click="editRoom(ridx)" class="tag-action-btn text-blue-400" title="編輯"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>
-                                        <button @click="removeRoom(ridx)" class="tag-action-btn text-red-400" title="刪除"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg></button>
-                                    </div>
+                            <div class="flex flex-wrap gap-2">
+                                <span v-for="(r, i) in hotelInfo.roomList" :key="i" class="tag-item">
+                                    {{ r }} <button @click="removeRoom(i)" class="ml-1 text-slate-400 hover:text-red-500">×</button>
                                 </span>
                             </div>
                         </div>
-                        <div class="flex flex-col"><label class="form-label">其他需求 Requests (點擊 + 新增)</label>
-                            <div class="flex gap-2">
-                                <input type="text" v-model="hotelInfo.requests" placeholder="例如：嬰兒床" @keyup.enter="addCustomRequest">
-                                <button @click="addCustomRequest" class="w-12 btn-primary rounded font-bold">+</button>
+                        <div>
+                            <div class="flex gap-2 mb-2">
+                                <input v-model="hotelInfo.requests" @keyup.enter="addCustomRequest" type="text" placeholder="其他需求 Requests (按 + 新增)" class="flex-1">
+                                <button @click="addCustomRequest" class="btn-primary w-12 rounded">+</button>
                             </div>
-                            <div class="mt-2 flex flex-wrap gap-2">
-                                <span v-for="(tag, tidx) in hotelInfo.selectedTags" :key="tidx" class="tag-item">
-                                    <span>{{ tag }}</span>
-                                    <div class="flex items-center gap-1 border-l pl-2 border-stone-200 ml-1">
-                                        <button @click="editRequest(tidx)" class="tag-action-btn text-blue-400" title="編輯"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></button>
-                                        <button @click="removeCustomTag(tidx)" class="tag-action-btn text-red-400" title="刪除"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg></button>
-                                    </div>
+                            <div class="flex flex-wrap gap-2">
+                                <span v-for="(t, i) in hotelInfo.selectedTags" :key="i" class="tag-item">
+                                    {{ t }} <button @click="removeCustomTag(i)" class="ml-1 text-slate-400 hover:text-red-500">×</button>
                                 </span>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- 作業人員 -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 border-t pt-4 font-bold">
-                        <div class="flex flex-col"><label class="form-label">Sales Contact</label><input type="text" v-model="hotelInfo.salesContact"></div>
-                        <div class="flex flex-col"><label class="form-label">Booked By</label><input type="text" v-model="hotelInfo.bookedBy"></div>
-                        <div class="flex flex-col"><label class="form-label">Payment By</label><input type="text" v-model="hotelInfo.paymentBy"></div>
-                    </div>
+                <!-- 4. Staff Info -->
+                <div class="ui-panel p-5 grid grid-cols-3 gap-4">
+                    <div><label class="form-label">Sales Contact</label><input type="text" v-model="hotelInfo.salesContact"></div>
+                    <div><label class="form-label">Booked By</label><input type="text" v-model="hotelInfo.bookedBy"></div>
+                    <div><label class="form-label">Payment By</label><input type="text" v-model="hotelInfo.paymentBy"></div>
                 </div>
             </div>
 
-            <!-- 右側動作區：摘要預覽 -->
-            <div class="lg:col-span-4 h-full">
-                <div class="japanese-card p-6 flex flex-col h-[calc(100vh-160px)] sticky top-8 shadow-sm text-sm">
-                    <div class="flex justify-between items-center mb-4 pb-2 border-b">
-                        <h2 class="text-xs font-bold text-stone-500 tracking-[0.2em] uppercase">摘要預覽</h2>
-                        <button @click="clearAllData" class="text-red-400 hover:text-red-600 flex items-center gap-1" title="清空所有資料">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-                            <span class="text-[10px] font-bold">清空</span>
+            <!-- Right: Preview & Actions -->
+            <div class="lg:col-span-4 space-y-4">
+                <div class="ui-panel p-5 sticky top-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-slate-700">預覽 & 下載</h3>
+                        <button @click="clearAllData" class="text-xs text-red-400 hover:text-red-600 font-bold">重置</button>
+                    </div>
+                    
+                    <div class="bg-slate-50 p-4 rounded text-xs space-y-2 mb-4 border border-slate-100">
+                        <div class="flex justify-between"><span class="text-slate-400 font-bold">HOTEL</span> <span>{{ hotelInfo.hotelName || '-' }}</span></div>
+                        <div class="flex justify-between"><span class="text-slate-400 font-bold">GUEST</span> <span>{{ hotelInfo.paxName || '-' }}</span></div>
+                        <div class="flex justify-between"><span class="text-slate-400 font-bold">DATE</span> <span class="font-mono">{{ hotelInfo.checkIn }}</span></div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <button @click="downloadHotelImage" class="w-full py-3 rounded border border-[#009FE3] text-[#009FE3] font-bold text-sm bg-white hover:bg-blue-50 transition-colors">
+                            下載圖片 (PNG)
+                        </button>
+                        <button @click="downloadHotelPDF" class="w-full py-3 rounded bg-[#009FE3] text-white font-bold text-sm hover:opacity-90 transition-opacity shadow-md">
+                            下載 PDF (A4)
                         </button>
                     </div>
-                    
-                    <div class="flex-1 overflow-y-auto space-y-4">
-                        <div class="bg-stone-50 p-4 rounded border border-stone-200 space-y-3">
-                            <div class="flex justify-between items-start group">
-                                <div>
-                                    <div class="text-[10px] text-stone-400 font-bold uppercase">Hotel / 飯店</div>
-                                    <div class="text-stone-700 font-medium">{{ hotelInfo.hotelName || '未填寫' }}</div>
-                                </div>
-                                <button @click="focusField('hotelNameInput')" class="summary-edit-btn">編輯</button>
-                            </div>
-                            <div class="flex justify-between items-start group">
-                                <div>
-                                    <div class="text-[10px] text-stone-400 font-bold uppercase">PAX / 旅客</div>
-                                    <div class="text-stone-700 font-medium">{{ hotelInfo.paxName || '未填寫' }} {{ hotelInfo.paxName ? hotelInfo.paxGender : '' }}</div>
-                                    <div class="text-[10px] text-stone-400 mt-1">{{ hotelInfo.paxPhone || '未留電話' }}</div>
-                                </div>
-                                <button @click="focusField('paxNameInput')" class="summary-edit-btn">編輯</button>
-                            </div>
-                            <div class="flex justify-between items-start group">
-                                <div>
-                                    <div class="text-[10px] text-stone-400 font-bold uppercase">Stay / 住宿期間</div>
-                                    <div class="text-stone-700 font-medium">{{ hotelInfo.checkIn || '-' }} 至 {{ hotelInfo.checkOut || '-' }}</div>
-                                    <div class="text-[10px] text-stone-500">{{ hotelInfo.nightsText }}</div>
-                                </div>
-                                <button @click="focusField('checkInInput')" class="summary-edit-btn">編輯</button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="mt-6 pt-4 border-t border-stone-100 space-y-3">
-                        <button @click="downloadHotelImage" class="w-full btn-outline py-3 rounded text-xs font-bold flex items-center justify-center gap-2">下載圖片 (PNG)</button>
-                        <button @click="downloadHotelPDF" class="w-full btn-primary py-3 rounded text-xs font-bold shadow-md flex items-center justify-center gap-2 text-white">下載 PDF (A4)</button>
-                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- 隱藏導出模板 -->
-        <div id="hotel-capture-area" class="fixed -left-[8000px] top-0">
+        <!-- Hidden Output Area -->
+        <div id="hotel-capture-area" class="fixed -left-[9999px] top-0">
             <div id="hotel-image-node" class="capture-node">
-                <!-- 頁首 -->
-                <div class="brand-header-exquisite">
-                    <img src="https://i.ibb.co/v4zmqdXN/LOGO-03-0.png" class="main-logo-img" alt="Lifetour Logo">
-                    <div class="doc-title-group">
-                        <h1 class="doc-title-main">訂房確認單</h1>
-                        <p class="doc-title-sub">Hotel Booking Confirmation</p>
-                    </div>
-                </div>
+                <!-- 1. Watermark (Opacity 50%, Centered) -->
+                <div class="watermark-layer"></div>
 
-                <div class="flex-1">
-                    <div class="text-right text-[9px] text-stone-400 font-mono italic mb-2">Issue Date: {{ today }} | {{ manualTimestamp }}</div>
+                <!-- 2. Content -->
+                <div class="content-layer">
                     
-                    <div class="mb-4">
-                        <div class="info-row flex items-baseline gap-2 mb-1"><span class="text-stone-500 text-[10px] font-bold w-24">旅館名稱 Hotel：</span><span class="text-stone-800 text-[12px] font-normal">{{ hotelInfo.hotelName }}</span></div>
-                        <div class="info-row flex items-baseline gap-2 mb-1"><span class="text-stone-500 text-[10px] font-bold w-24">聯絡電話 TEL：</span><span class="info-value font-mono text-[12px] font-normal">{{ hotelInfo.tel }}</span></div>
-                        <div class="info-row flex items-baseline gap-2 mb-1"><span class="text-stone-500 text-[10px] font-bold w-24">旅館地址 ADD：</span><span class="info-value text-[12px] font-normal">{{ hotelInfo.address }}</span></div>
-                    </div>
+                    <!-- Top Bar -->
+                    <div class="top-bar"></div>
 
-                    <div class="booking-no-box">
-                        <span class="text-[8px] font-bold text-stone-500 uppercase tracking-widest block mb-1">訂房代號 Booking ID No.</span>
-                        <span class="booking-no-value">RV# {{ hotelInfo.bookingNo }}</span>
-                    </div>
-
-                    <div class="flex flex-col gap-1 mb-5">
-                        <div class="info-block-item flex items-baseline gap-2"><span class="section-label">旅客姓名 PAX Name：</span><span class="text-[12px] text-stone-800 font-normal">{{ hotelInfo.paxName }} {{ hotelInfo.paxGender }}</span></div>
-                        <div class="info-block-item flex items-baseline gap-2"><span class="section-label">旅客連絡電話 PAX Phone：</span><span class="font-mono text-[12px] text-stone-800 font-normal">{{ hotelInfo.paxPhone }}</span></div>
-                    </div>
-
-                    <table class="stay-table">
-                        <tr><th>入住日期 Check-in</th><td>{{ formattedHotelCheckIn }}</td></tr>
-                        <tr><th>退房日期 Check-Out</th><td>{{ formattedHotelCheckOut }}</td></tr>
-                        <tr><th>泊數 No. of Night</th><td>{{ hotelInfo.nightsText }}</td></tr>
-                        <tr><th>房間型態 Rooms</th><td><div v-for="(room, ridx) in hotelInfo.roomList" :key="ridx">{{ room }}</div></td></tr>
-                        <tr><th style="vertical-align: top; padding-top: 12px;">其他需求 Requests</th><td style="height: 100px; vertical-align: top; padding-top: 12px; color: #4a5568;">{{ fullHotelRequestsText }}</td></tr>
-                    </table>
-                </div>
-
-                <div class="mt-auto border-t border-stone-100 pt-2 relative">
-                    <!-- 注意事項 -->
-                    <div class="bg-[#fcfdfe] p-4 rounded border border-[#238FD1]/10 mb-2">
-                        <h4 class="font-bold text-[11px] mb-2 text-[#238FD1] uppercase tracking-widest">注意事項 Note</h4>
-                        <div class="grid grid-cols-1 gap-1 text-[9.5px] text-stone-600 leading-snug">
-                            <p>◎ 辦理住房手續時間 Check-in Time：{{ hotelInfo.checkInTime }}｜辦理退房手續時間 Check-Out Time：{{ hotelInfo.checkOutTime }}</p>
-                            <p>◎ 以上價格含稅與服務費，個人雜費請於櫃檯自行結清。</p>
-                            <div class="mt-1"><p class="text-[8px] text-stone-500 leading-tight font-normal">Room Charge inclusive of tax and services only.<br>Extras must be collected from the clients.</p></div>
-                            <div class="border-t border-stone-100 my-2"></div>
-                            <div class="pt-0">
-                                <p class="font-bold text-[#238FD1] text-[10px] mb-1">【入住飯店小叮嚀】</p>
-                                <p>(1)自2023/7/1起不主動提供一次性備品，建議旅客自行攜帶。</p>
-                                <p>(2)飯店館內全面禁止吸菸（香菸空盒也請勿丟飯店房間垃圾桶）。</p>
-                            </div>
+                    <!-- Header -->
+                    <div class="header-section">
+                        <div class="header-logo">
+                            <img src="https://i.ibb.co/v4zmqdXN/LOGO-03-0.png" alt="Lifetour Logo">
+                        </div>
+                        <div class="header-title-block">
+                            <h1 class="main-title">訂房確認書</h1>
+                            <p class="sub-title">HOTEL BOOKING CONFIRMATION</p>
+                            <p class="issue-date">Issue Date: {{ today }}</p>
                         </div>
                     </div>
 
-                    <!-- 備註條款 -->
-                    <div class="px-4 mb-6">
-                        <p class="font-bold text-[10px] text-stone-700 uppercase tracking-tighter mb-1">備註 Remakrs：</p>
-                        <p class="text-[9.5px] text-stone-800 leading-relaxed font-medium">
-                            本訂房案經閣下同意保證住房，不得變更姓名、日期、取消或縮短泊數。<br>
-                            行程中有任何更改或發生取消訂房時，請務必通知本公司代為辦理，否則本公司須收一晚住房費用。
-                        </p>
-                    </div>
+                    <!-- Body Content -->
+                    <div class="body-container">
+                        
+                        <!-- Info Grid (重構: 飯店在左，旅客在右，卡片式) -->
+                        <div class="info-grid">
+                            
+                            <!-- Left: Hotel Info -->
+                            <div class="info-box">
+                                <div class="info-box-header">
+                                    <span class="header-deco"></span> 飯店資訊 / Hotel Info
+                                </div>
+                                <div class="info-box-content">
+                                    <div class="info-row">
+                                        <span class="info-label">旅館名稱：</span>
+                                        <span class="info-val">{{ hotelInfo.hotelName }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="info-label">電話 TEL：</span>
+                                        <span class="info-val mono">{{ hotelInfo.tel }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="info-label">旅館地址：</span>
+                                        <span class="info-val">{{ hotelInfo.address }}</span>
+                                    </div>
+                                </div>
+                            </div>
 
-                    <!-- 作業資訊與印章 -->
-                    <div class="flex justify-between items-center px-4 pt-6 border-t border-stone-100 mb-6">
-                        <div class="flex flex-col gap-1.5 text-[10px] text-stone-500">
-                            <div class="flex items-center gap-2">
-                                <span class="w-28 font-bold text-stone-400 uppercase">Sales Contact:</span>
-                                <!-- 移除了 border-b border-stone-100 pb-0.5 -->
-                                <span class="text-stone-800 font-normal px-1">{{ hotelInfo.salesContact }}</span>
+                            <!-- Right: Guest Info -->
+                            <div class="info-box">
+                                <div class="info-box-header">
+                                    <span class="header-deco"></span> 旅客與訂單 / Guest & Booking
+                                </div>
+                                <div class="info-box-content">
+                                    <div class="booking-card">
+                                        <span class="booking-label">訂房代號 BOOKING NO.</span>
+                                        <span class="booking-val">RV# {{ hotelInfo.bookingNo }}</span>
+                                    </div>
+
+                                    <div class="info-row">
+                                        <span class="info-label">旅客姓名：</span>
+                                        <span class="info-val">{{ hotelInfo.paxName }} {{ hotelInfo.paxGender }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="info-label">連絡電話：</span>
+                                        <span class="info-val mono">{{ hotelInfo.paxPhone }}</span>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="flex items-center gap-2">
-                                <span class="w-28 font-bold text-stone-400 uppercase">Booked By:</span>
-                                <!-- 移除了 border-b border-stone-100 pb-0.5 -->
-                                <span class="text-stone-800 font-normal px-1">{{ hotelInfo.bookedBy }}</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <span class="w-28 font-bold text-stone-400 uppercase">Payment By:</span>
-                                <!-- 移除了 border-b border-stone-100 pb-0.5 -->
-                                <span class="text-stone-800 font-normal px-1">{{ hotelInfo.paymentBy }}</span>
+
+                        </div>
+
+                        <!-- Table -->
+                        <div class="table-section">
+                            <div class="table-header-title">住宿詳情 / Itinerary Details</div>
+                            <table class="custom-table">
+                                <thead>
+                                    <tr>
+                                        <th width="35%">入住日期 Check-in</th>
+                                        <th width="35%">退房日期 Check-Out</th>
+                                        <th width="30%">泊數 No. of Night</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="date-highlight">{{ formattedHotelCheckIn }}</td>
+                                        <td class="date-highlight">{{ formattedHotelCheckOut }}</td>
+                                        <td>{{ hotelInfo.nightsText }}</td>
+                                    </tr>
+                                    <!-- 房型獨立一行 -->
+                                    <tr>
+                                        <td colspan="3" style="background-color: #fafafa;">
+                                            <div class="text-[10px] text-slate-500 font-bold mb-1">房間型態 Rooms</div>
+                                            <div v-for="(r,i) in hotelInfo.roomList" :key="i" class="room-item">• {{ r }}</div>
+                                        </td>
+                                    </tr>
+                                    <!-- 其他需求 -->
+                                    <tr>
+                                        <td colspan="3" class="top-align">
+                                            <div class="text-[10px] text-slate-500 font-bold mb-1">其他需求 Requests</div>
+                                            <div class="requests-box">{{ fullHotelRequestsText }}</div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Notes -->
+                        <div class="notes-section">
+                            <div class="notes-title">注意事項 Note</div>
+                            <div class="notes-content">
+                                <p>◎ 辦理住房手續時間 Check-in Time：<span class="time-bold">{{ hotelInfo.checkInTime }}</span>｜辦理退房手續時間 Check-Out Time：<span class="time-bold">{{ hotelInfo.checkOutTime }}</span></p>
+                                <p>◎ 以上價格含稅與服務費，個人雜費請於櫃檯自行結清。</p>
+                                <p class="text-slate-400 italic mb-2">Room Charge inclusive of tax and services only. Extras must be collected from the clients.</p>
+                                
+                                <div class="mt-2 pt-2 border-t border-dashed border-slate-300">
+                                    <p class="text-[#009FE3] font-bold">【入住飯店小叮嚀】</p>
+                                    <p>(1) 自2023/7/1起不主動提供一次性備品，建議旅客自行攜帶。</p>
+                                    <p>(2) 飯店館內全面禁止吸菸（香菸空盒也請勿丟飯店房間垃圾桶）。</p>
+                                </div>
                             </div>
                         </div>
-                        <div class="stamp-area">
-                            <img src="https://i.ibb.co/9HWqxm0V/2026-01-28-181925.png" class="stamp-image" alt="Stamp">
+
+                        <!-- Remarks -->
+                        <div class="remarks-text">
+                            <b>備註 Remarks：</b><br>
+                            本訂房案經閣下同意保證住房，不得變更姓名、日期、取消或縮短泊數。行程中有任何更改或發生取消訂房時，請務必通知本公司代為辦理，否則本公司須收一晚住房費用。
                         </div>
+
+                        <!-- Footer -->
+                        <div class="footer-section">
+                            <div class="signature-grid">
+                                <div class="sig-item">
+                                    <span class="sig-label">業務 Sales Contact</span>
+                                    <span class="sig-val">{{ hotelInfo.salesContact }}</span>
+                                </div>
+                                <div class="sig-item">
+                                    <span class="sig-label">訂房人員 Booked By</span>
+                                    <span class="sig-val">{{ hotelInfo.bookedBy }}</span>
+                                </div>
+                                <div class="sig-item">
+                                    <span class="sig-label">付款單位 Payment By</span>
+                                    <span class="sig-val">{{ hotelInfo.paymentBy }}</span>
+                                </div>
+                            </div>
+                            <div class="stamp-area">
+                                <img src="https://i.ibb.co/9HWqxm0V/2026-01-28-181925.png" class="stamp-img" alt="Stamp">
+                            </div>
+                        </div>
+
+                        <div class="bottom-brand">www.lifetour.com.tw</div>
+
                     </div>
-                    <div class="footer-website-brand">www.lifetour.com.tw</div>
                 </div>
             </div>
         </div>
@@ -421,26 +706,13 @@
                 const toastMsg = ref('');
                 const newRoomInput = ref('');
 
-                // 初始資料物件
                 const initialData = {
-                    hotelName: '', 
-                    tel: '', 
-                    address: '',
-                    bookingNo: '', 
-                    paxName: '', 
-                    paxGender: '先生/女士', 
-                    paxPhone: '', 
-                    checkIn: '2026-02-20', 
-                    checkOut: '2026-02-21', 
-                    nightsText: '兩天一夜',
-                    checkInTime: '15:00', 
-                    checkOutTime: '11:00',
-                    roomList: [], 
-                    requests: '', 
-                    selectedTags: ['依房型人數提供早餐'],
-                    bookedBy: '五福旅行社｜陳侑君', 
-                    salesContact: '五福旅行社｜', 
-                    paymentBy: '五福旅行社'
+                    hotelName: '', tel: '', address: '',
+                    bookingNo: '', paxName: '', paxGender: '先生/女士', paxPhone: '',
+                    checkIn: '2026-02-20', checkOut: '2026-02-21', nightsText: '兩天一夜',
+                    checkInTime: '15:00', checkOutTime: '11:00',
+                    roomList: [], requests: '', selectedTags: ['依房型人數提供早餐'],
+                    bookedBy: '五福旅行社｜陳侑君', salesContact: '五福旅行社｜', paymentBy: '五福旅行社'
                 };
 
                 const hotelInfo = reactive({ ...initialData });
@@ -449,7 +721,7 @@
                     Object.assign(hotelInfo, initialData);
                     hotelInfo.roomList = [];
                     hotelInfo.selectedTags = ['依房型人數提供早餐'];
-                    showToast("資料已全數清空");
+                    showToast("資料已清空");
                 };
 
                 const addRoom = () => {
@@ -458,13 +730,8 @@
                         newRoomInput.value = '';
                     }
                 };
-                const removeRoom = (idx) => hotelInfo.roomList.splice(idx, 1);
-                const editRoom = (idx) => {
-                    newRoomInput.value = hotelInfo.roomList[idx];
-                    hotelInfo.roomList.splice(idx, 1);
-                };
+                const removeRoom = (i) => hotelInfo.roomList.splice(i, 1);
 
-                const fullHotelRequestsText = computed(() => hotelInfo.selectedTags.join('、') || '無');
                 const addCustomRequest = () => {
                     if (hotelInfo.requests.trim()) {
                         if (!hotelInfo.selectedTags.includes(hotelInfo.requests.trim())) {
@@ -473,29 +740,24 @@
                         hotelInfo.requests = '';
                     }
                 };
-                const removeCustomTag = (idx) => hotelInfo.selectedTags.splice(idx, 1);
-                const editRequest = (idx) => {
-                    hotelInfo.requests = hotelInfo.selectedTags[idx];
-                    hotelInfo.selectedTags.splice(idx, 1);
+                const removeCustomTag = (i) => hotelInfo.selectedTags.splice(i, 1);
+
+                const fullHotelRequestsText = computed(() => hotelInfo.selectedTags.join('、') || '無');
+
+                const formatDate = (d) => {
+                    if(!d) return '';
+                    const date = new Date(d);
+                    const days = ['週日','週一','週二','週三','週四','週五','週六'];
+                    return `${d.replace(/-/g,'/')} (${days[date.getDay()]})`;
                 };
+                const formattedHotelCheckIn = computed(() => formatDate(hotelInfo.checkIn));
+                const formattedHotelCheckOut = computed(() => formatDate(hotelInfo.checkOut));
 
-                const formatDateWithDay = (dateStr) => {
-                    if (!dateStr) return '';
-                    const date = new Date(dateStr);
-                    const days = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
-                    return `${dateStr.replace(/-/g, '/')} (${days[date.getDay()]})`;
-                };
-
-                const formattedHotelCheckIn = computed(() => formatDateWithDay(hotelInfo.checkIn));
-                const formattedHotelCheckOut = computed(() => formatDateWithDay(hotelInfo.checkOut));
-
-                watch([() => hotelInfo.checkIn, () => hotelInfo.checkOut], ([start, end]) => {
-                    if (start && end) {
-                        const s = new Date(start); 
-                        const e = new Date(end);
-                        const n = Math.max(0, Math.ceil((e - s) / (1000 * 60 * 60 * 24)));
-                        const mapper = { 0: '當日退房', 1: '兩天一夜', 2: '三天兩夜', 3: '四天三夜' };
-                        hotelInfo.nightsText = mapper[n] || `${n+1}天${n}夜`;
+                watch([() => hotelInfo.checkIn, () => hotelInfo.checkOut], ([s, e]) => {
+                    if (s && e) {
+                        const diff = Math.max(0, Math.ceil((new Date(e)-new Date(s))/(86400000)));
+                        const map = {0:'當日', 1:'兩天一夜', 2:'三天兩夜'};
+                        hotelInfo.nightsText = map[diff] || `${diff+1}天${diff}夜`;
                     }
                 });
 
@@ -506,56 +768,46 @@
 
                 const showToast = (msg) => {
                     toastMsg.value = msg;
-                    setTimeout(() => { if(toastMsg.value === msg) toastMsg.value = ''; }, 3000);
+                    setTimeout(() => toastMsg.value = '', 3000);
                 };
 
-                // 生成檔案名稱邏輯
                 const generateFileName = (ext) => {
-                    const datePrefix = hotelInfo.checkIn ? hotelInfo.checkIn.replace(/-/g, '') : '未定日期';
-                    const pax = hotelInfo.paxName || '未定旅客';
-                    const hotel = hotelInfo.hotelName || '未定飯店';
-                    return `${datePrefix}${pax}-${hotel}訂房確認單.${ext}`;
+                    const d = hotelInfo.checkIn ? hotelInfo.checkIn.replace(/-/g,'') : '未定';
+                    const n = hotelInfo.paxName || '旅客';
+                    const h = hotelInfo.hotelName || '飯店';
+                    return `${d}${n}-${h}確認單.${ext}`;
                 };
 
                 const downloadHotelPDF = () => {
+                    showToast("PDF 製作中...");
                     const node = document.getElementById('hotel-image-node');
-                    showToast("正在產生 PDF...");
-                    html2canvas(node, { scale: 3, useCORS: true, backgroundColor: '#ffffff' }).then(canvas => {
-                        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                    html2canvas(node, { scale: 2, useCORS: true, backgroundColor: '#ffffff' }).then(canvas => {
                         const pdf = new jspdf.jsPDF('p', 'mm', 'a4');
-                        pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
+                        pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 210, 297);
                         pdf.save(generateFileName('pdf'));
-                        showToast("PDF 下載成功");
+                        showToast("下載完成");
                     });
                 };
 
                 const downloadHotelImage = () => {
-                    html2canvas(document.getElementById('hotel-image-node'), { scale: 3, useCORS: true }).then(canvas => {
+                    const node = document.getElementById('hotel-image-node');
+                    html2canvas(node, { scale: 2, useCORS: true }).then(canvas => {
                         const a = document.createElement('a');
                         a.download = generateFileName('png');
-                        a.href = canvas.toDataURL("image/png"); a.click();
-                        showToast("圖片下載成功");
+                        a.href = canvas.toDataURL("image/png");
+                        a.click();
+                        showToast("下載完成");
                     });
                 };
 
-                const focusFieldProxy = (fieldRef) => {
-                    const el = document.querySelector(`[ref="${fieldRef}"]`);
-                    if (el) {
-                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        el.focus();
-                    }
-                };
-
-                return { 
-                    today, toastMsg,
-                    hotelInfo, newRoomInput, fullHotelRequestsText, manualTimestamp,
-                    formattedHotelCheckIn, formattedHotelCheckOut,
-                    addRoom, removeRoom, editRoom, addCustomRequest, removeCustomTag, editRequest, 
-                    downloadHotelImage, downloadHotelPDF, clearAllData, focusField: focusFieldProxy
+                return {
+                    toastMsg, hotelInfo, newRoomInput, fullHotelRequestsText,
+                    formattedHotelCheckIn, formattedHotelCheckOut, manualTimestamp,
+                    addRoom, removeRoom, addCustomRequest, removeCustomTag,
+                    clearAllData, downloadHotelImage, downloadHotelPDF, today
                 };
             }
         }).mount('#app');
     </script>
 </body>
 </html>
-
