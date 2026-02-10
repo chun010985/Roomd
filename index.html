@@ -198,17 +198,19 @@
         .info-box-header {
             background-color: var(--brand-light);
             height: 32px; /* 固定高度 */
-            padding: 0 12px; /* 移除垂直 padding，改用 flex 垂直置中 */
+            padding: 0 12px;
             border-bottom: 1px solid #e2e8f0;
             font-size: 11px;
             font-weight: 700;
             color: var(--brand-dark);
             text-transform: uppercase;
             letter-spacing: 1px;
+            /* Flex 垂直置中設定 */
             display: flex;
-            align-items: center; /* 確保垂直置中 */
+            align-items: center; 
             gap: 6px;
             box-sizing: border-box;
+            line-height: 1; /* 強制行高避免偏移 */
         }
         /* 裝飾小方塊 */
         .header-deco {
@@ -256,13 +258,15 @@
             border: 1px solid var(--brand-primary);
             border-radius: 4px;
             height: 36px; /* 固定高度 */
-            padding: 0 12px; /* 移除垂直 padding */
+            padding: 0 12px;
             margin-bottom: 10px;
             box-shadow: 0 2px 4px rgba(0, 159, 227, 0.2);
+            /* Flex 垂直置中設定 */
             display: flex;
-            align-items: center; /* 確保垂直置中 */
+            align-items: center;
             justify-content: space-between;
             box-sizing: border-box;
+            line-height: 1; /* 強制行高避免偏移 */
         }
         .booking-label { 
             font-size: 10px; 
@@ -304,11 +308,13 @@
             font-weight: 700;
             text-align: left;
             height: 40px; /* 固定高度 */
-            padding: 0 12px; /* 移除垂直 padding */
+            padding: 0 12px;
             border-bottom: 1px solid #cbd5e1;
             border-right: 1px solid #cbd5e1;
-            vertical-align: middle; /* 確保垂直置中 */
+            /* Table Cell 垂直置中 */
+            vertical-align: middle; 
             box-sizing: border-box;
+            line-height: normal; /* 讓 vertical-align 生效 */
         }
         .custom-table td {
             padding: 12px;
@@ -639,7 +645,12 @@
                                     <tr>
                                         <td colspan="3" class="top-align">
                                             <div class="text-[10px] text-slate-500 font-bold mb-1">其他需求 Requests</div>
-                                            <div class="requests-box">{{ fullHotelRequestsText }}</div>
+                                            <div class="requests-box">
+                                                <div v-if="hotelInfo.selectedTags.length === 0">無</div>
+                                                <div v-else v-for="(tag, i) in hotelInfo.selectedTags" :key="i">
+                                                    • {{ tag }}
+                                                </div>
+                                            </div>
                                         </td>
                                     </tr>
                                 </tbody>
