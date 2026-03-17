@@ -21,6 +21,29 @@
             --brand-dark: #006896;    /* 深藍 */
             --brand-light: #f0f9ff;   /* 極淡藍 */
             --text-main: #1e293b;     /* 主要文字 */
+            --text-sub: #64748b;      /* 次要文字 */<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>訂房確認單生成系統</title>
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- html2canvas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- jsPDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        /* --- 品牌色變數 --- */
+        :root {
+            --brand-primary: #009FE3; /* 品牌天藍 */
+            --brand-dark: #006896;    /* 深藍 */
+            --brand-light: #f0f9ff;   /* 極淡藍 */
+            --text-main: #1e293b;     /* 主要文字 */
             --text-sub: #64748b;      /* 次要文字 */
             --border-color: #cbd5e1;
             --alert-red: #dc2626;     /* 警示紅 */
@@ -713,14 +736,30 @@
 
         createApp({
             setup() {
-                const today = new Date().toISOString().split('T')[0];
+                // 1. 取得準確的本地日期 (格式 YYYY-MM-DD)，修正原本使用 UTC 的 toISOString() 造成的誤差
+                const getLocalDateString = (dateObj) => {
+                    const year = dateObj.getFullYear();
+                    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                    const day = String(dateObj.getDate()).padStart(2, '0');
+                    return `${year}-${month}-${day}`;
+                };
+
+                const now = new Date();
+                const today = ref(getLocalDateString(now));
+
+                // 2. 準備預設的明天日期做為退房日
+                const tomorrowObj = new Date(now);
+                tomorrowObj.setDate(tomorrowObj.getDate() + 1);
+                const tomorrow = getLocalDateString(tomorrowObj);
+
                 const toastMsg = ref('');
                 const newRoomInput = ref('');
 
+                // 3. 將預設資料中的日期改成動態的 `today` 與 `tomorrow`
                 const initialData = {
                     hotelName: '', tel: '', address: '',
                     bookingNo: '', paxName: '', paxGender: '先生/女士', paxPhone: '',
-                    checkIn: '2026-02-20', checkOut: '2026-02-21', nightsText: '兩天一夜',
+                    checkIn: today.value, checkOut: tomorrow, nightsText: '兩天一夜',
                     checkInTime: '15:00', checkOutTime: '11:00',
                     roomList: [], requests: '', selectedTags: ['依房型人數提供早餐'],
                     bookedBy: '五福旅行社｜陳侑君', salesContact: '五福旅行社｜', paymentBy: '五福旅行社'
@@ -772,11 +811,6 @@
                     }
                 });
 
-                const manualTimestamp = computed(() => {
-                    const now = new Date();
-                    return `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-                });
-
                 const showToast = (msg) => {
                     toastMsg.value = msg;
                     setTimeout(() => toastMsg.value = '', 3000);
@@ -813,7 +847,7 @@
 
                 return {
                     toastMsg, hotelInfo, newRoomInput, fullHotelRequestsText,
-                    formattedHotelCheckIn, formattedHotelCheckOut, manualTimestamp,
+                    formattedHotelCheckIn, formattedHotelCheckOut, 
                     addRoom, removeRoom, addCustomRequest, removeCustomTag,
                     clearAllData, downloadHotelImage, downloadHotelPDF, today
                 };
