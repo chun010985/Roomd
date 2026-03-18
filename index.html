@@ -21,29 +21,6 @@
             --brand-dark: #006896;    /* 深藍 */
             --brand-light: #f0f9ff;   /* 極淡藍 */
             --text-main: #1e293b;     /* 主要文字 */
-            --text-sub: #64748b;      /* 次要文字 */<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>訂房確認單生成系統</title>
-    <!-- Vue 3 -->
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- html2canvas -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <!-- jsPDF -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
-    <style>
-        /* --- 品牌色變數 --- */
-        :root {
-            --brand-primary: #009FE3; /* 品牌天藍 */
-            --brand-dark: #006896;    /* 深藍 */
-            --brand-light: #f0f9ff;   /* 極淡藍 */
-            --text-main: #1e293b;     /* 主要文字 */
             --text-sub: #64748b;      /* 次要文字 */
             --border-color: #cbd5e1;
             --alert-red: #dc2626;     /* 警示紅 */
@@ -388,8 +365,8 @@
             line-height: 1.6;
             text-align: justify;
         }
-        /* 時間改為紅色 */
-        .time-bold { color: var(--alert-red); font-weight: 700; }
+        /* 時間改為紅色 (直接使用色碼確保圖片截取能正確顯示) */
+        .time-bold { color: #dc2626; font-weight: 700; }
 
         /* 備註 */
         .remarks-text {
@@ -690,7 +667,7 @@
                                 
                                 <div class="mt-2 pt-2 border-t border-dashed border-slate-300">
                                     <p class="text-[#009FE3] font-bold">【入住飯店小叮嚀】</p>
-                                    <p>(1) 自2023/7/1起不主動提供一次性備品，建議旅客自行攜帶。</p>
+                                    <p>(1) 響應政府減塑政策，自2023年7月1日起，多數飯店將不再於客房內提供一次性用品，建議旅客自行攜帶。</p>
                                     <p>(2) 飯店館內全面禁止吸菸（香菸空盒也請勿丟飯店房間垃圾桶）。</p>
                                 </div>
                             </div>
@@ -802,6 +779,15 @@
                 };
                 const formattedHotelCheckIn = computed(() => formatDate(hotelInfo.checkIn));
                 const formattedHotelCheckOut = computed(() => formatDate(hotelInfo.checkOut));
+
+                // 新增：當入住日期改變時，退房日期自動 +1 天
+                watch(() => hotelInfo.checkIn, (newCheckIn) => {
+                    if (newCheckIn) {
+                        const nextDay = new Date(newCheckIn);
+                        nextDay.setDate(nextDay.getDate() + 1);
+                        hotelInfo.checkOut = getLocalDateString(nextDay);
+                    }
+                });
 
                 watch([() => hotelInfo.checkIn, () => hotelInfo.checkOut], ([s, e]) => {
                     if (s && e) {
