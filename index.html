@@ -8,10 +8,8 @@
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- html2canvas -->
+    <!-- html2canvas (保留給下載圖片使用) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <!-- jsPDF -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
     <style>
@@ -416,13 +414,57 @@
             letter-spacing: 2px;
             padding-bottom: 15px;
         }
+
+        /* =========================================
+           列印與輸出 PDF 專用 CSS
+           ========================================= */
+        @media print {
+            /* 隱藏不需要被印出的 UI 介面 */
+            .no-print { display: none !important; }
+            
+            /* 重置網頁預設背景與邊距，防止排版跑掉 */
+            body, html {
+                background-color: #ffffff !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            /* 強制瀏覽器印出背景顏色與圖案 (水浮水印等) */
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            /* 顯示原本藏起來的列印區塊，並定位在左上角 */
+            .print-active-area {
+                position: static !important;
+                left: auto !important;
+                top: auto !important;
+                display: block !important;
+                margin: 0 auto;
+            }
+
+            /* 確保產出大小剛好是 A4 */
+            .capture-node {
+                width: 210mm !important;
+                height: 297mm !important;
+                box-shadow: none !important;
+                border: none !important;
+            }
+
+            /* 設定紙張為 A4 且無邊界 (因為我們內部自己有設定 padding) */
+            @page {
+                size: A4 portrait;
+                margin: 0;
+            }
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
     <div id="app" v-cloak class="max-w-[1300px] mx-auto">
         
         <!-- App Toolbar -->
-        <div class="mb-6 flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-slate-100">
+        <div class="mb-6 flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-slate-100 no-print">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-[#009FE3] rounded flex items-center justify-center text-white font-serif font-bold text-xl">L</div>
                 <div>
@@ -434,11 +476,11 @@
         </div>
 
         <!-- Toast -->
-        <div v-if="toastMsg" class="fixed top-8 left-1/2 -translate-x-1/2 z-[50] bg-slate-800 text-white px-6 py-2 rounded shadow-lg text-sm transition-opacity">
+        <div v-if="toastMsg" class="fixed top-8 left-1/2 -translate-x-1/2 z-[50] bg-slate-800 text-white px-6 py-2 rounded shadow-lg text-sm transition-opacity no-print">
             {{ toastMsg }}
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start no-print">
             
             <!-- Left: Inputs -->
             <div class="lg:col-span-8 space-y-6">
@@ -535,15 +577,18 @@
                             下載圖片 (PNG)
                         </button>
                         <button @click="downloadHotelPDF" class="w-full py-3 rounded bg-[#009FE3] text-white font-bold text-sm hover:opacity-90 transition-opacity shadow-md">
-                            下載 PDF (A4)
+                            下載 PDF (A4 向量文字)
                         </button>
+                        <p class="text-[10px] text-slate-400 text-center mt-2 leading-relaxed">
+                            💡 點擊下載 PDF 後，系統會開啟列印對話框，請在目的地選擇「<b>另存為 PDF</b>」，這樣產出的 PDF 才會擁有高畫質且可以複製的文字喔！
+                        </p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Hidden Output Area -->
-        <div id="hotel-capture-area" class="fixed -left-[9999px] top-0">
+        <!-- Hidden Output Area (將被用於轉圖與列印輸出) -->
+        <div id="hotel-capture-area" class="fixed -left-[9999px] top-0 print-active-area">
             <div id="hotel-image-node" class="capture-node">
                 <!-- 1. Watermark (Opacity 50%, Centered) -->
                 <div class="watermark-layer"></div>
@@ -713,7 +758,7 @@
 
         createApp({
             setup() {
-                // 1. 取得準確的本地日期 (格式 YYYY-MM-DD)，修正原本使用 UTC 的 toISOString() 造成的誤差
+                // 1. 取得準確的本地日期 (格式 YYYY-MM-DD)
                 const getLocalDateString = (dateObj) => {
                     const year = dateObj.getFullYear();
                     const month = String(dateObj.getMonth() + 1).padStart(2, '0');
@@ -732,7 +777,6 @@
                 const toastMsg = ref('');
                 const newRoomInput = ref('');
 
-                // 3. 將預設資料中的日期改成動態的 `today` 與 `tomorrow`
                 const initialData = {
                     hotelName: '', tel: '', address: '',
                     bookingNo: '', paxName: '', paxGender: '先生/女士', paxPhone: '',
@@ -780,7 +824,6 @@
                 const formattedHotelCheckIn = computed(() => formatDate(hotelInfo.checkIn));
                 const formattedHotelCheckOut = computed(() => formatDate(hotelInfo.checkOut));
 
-                // 新增：當入住日期改變時，退房日期自動 +1 天
                 watch(() => hotelInfo.checkIn, (newCheckIn) => {
                     if (newCheckIn) {
                         const nextDay = new Date(newCheckIn);
@@ -799,7 +842,7 @@
 
                 const showToast = (msg) => {
                     toastMsg.value = msg;
-                    setTimeout(() => toastMsg.value = '', 3000);
+                    setTimeout(() => toastMsg.value = '', 4500);
                 };
 
                 const generateFileName = (ext) => {
@@ -809,25 +852,31 @@
                     return `${d}${n}-${h}確認單.${ext}`;
                 };
 
+                // === 下載 PDF 邏輯 (改為原生列印以保留文字) ===
                 const downloadHotelPDF = () => {
-                    showToast("PDF 製作中...");
-                    const node = document.getElementById('hotel-image-node');
-                    html2canvas(node, { scale: 2, useCORS: true, backgroundColor: '#ffffff' }).then(canvas => {
-                        const pdf = new jspdf.jsPDF('p', 'mm', 'a4');
-                        pdf.addImage(canvas.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, 210, 297);
-                        pdf.save(generateFileName('pdf'));
-                        showToast("下載完成");
-                    });
+                    showToast("準備產出 PDF！請在列印畫面中選擇「另存為 PDF」。");
+                    
+                    // 暫時修改網頁標題，讓匯出的 PDF 能自動帶入我們想要的檔名
+                    const originalTitle = document.title;
+                    document.title = generateFileName('pdf').replace('.pdf', '');
+                    
+                    setTimeout(() => {
+                        window.print();
+                        // 開啟列印後將標題改回來
+                        document.title = originalTitle;
+                    }, 500);
                 };
 
+                // === 下載圖片邏輯 (保留原樣 html2canvas) ===
                 const downloadHotelImage = () => {
+                    showToast("圖片產生中...");
                     const node = document.getElementById('hotel-image-node');
                     html2canvas(node, { scale: 2, useCORS: true }).then(canvas => {
                         const a = document.createElement('a');
                         a.download = generateFileName('png');
                         a.href = canvas.toDataURL("image/png");
                         a.click();
-                        showToast("下載完成");
+                        showToast("圖片下載完成");
                     });
                 };
 
