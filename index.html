@@ -524,6 +524,7 @@
 
                 <!-- 3. Rooms & Requests -->
                 <div class="ui-panel p-5">
+                    <h2 class="text-sm font-bold text-[#009FE3] mb-4 pb-2 border-b border-blue-100">2. 房型與需求</h2>
                     <div class="space-y-4">
                         <div>
                             <div class="flex gap-2 mb-2">
@@ -550,11 +551,34 @@
                     </div>
                 </div>
 
-                <!-- 4. Staff Info -->
-                <div class="ui-panel p-5 grid grid-cols-3 gap-4">
-                    <div><label class="form-label">Sales Contact</label><input type="text" v-model="hotelInfo.salesContact"></div>
-                    <div><label class="form-label">Booked By</label><input type="text" v-model="hotelInfo.bookedBy"></div>
-                    <div><label class="form-label">Payment By</label><input type="text" v-model="hotelInfo.paymentBy"></div>
+                <!-- 4. Notes (New Feature) -->
+                <div class="ui-panel p-5">
+                    <h2 class="text-sm font-bold text-[#009FE3] mb-4 pb-2 border-b border-blue-100">3. 注意事項 Notes</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex gap-2 mb-2">
+                                <input v-model="newNoteInput" @keyup.enter="addNote" type="text" placeholder="新增注意事項 (按 + 新增)" class="flex-1">
+                                <button @click="addNote" class="btn-primary w-12 rounded">+</button>
+                            </div>
+                            <div class="flex flex-col gap-2 mt-3">
+                                <div v-for="(note, i) in hotelInfo.customNotes" :key="i" class="flex justify-between items-start bg-slate-50 p-2 rounded border border-slate-200 text-sm">
+                                    <span class="flex-1 text-slate-700 leading-relaxed">{{ i + 1 }}. {{ note }}</span>
+                                    <button @click="removeNote(i)" class="ml-2 text-slate-400 hover:text-red-500 font-bold px-2 text-lg leading-none">&times;</button>
+                                </div>
+                                <div v-if="hotelInfo.customNotes.length === 0" class="text-xs text-slate-400 italic py-2">目前無注意事項</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. Staff Info -->
+                <div class="ui-panel p-5">
+                    <h2 class="text-sm font-bold text-[#009FE3] mb-4 pb-2 border-b border-blue-100">4. 簽核人員資訊</h2>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div><label class="form-label">Sales Contact</label><input type="text" v-model="hotelInfo.salesContact"></div>
+                        <div><label class="form-label">Booked By</label><input type="text" v-model="hotelInfo.bookedBy"></div>
+                        <div><label class="form-label">Payment By</label><input type="text" v-model="hotelInfo.paymentBy"></div>
+                    </div>
                 </div>
             </div>
 
@@ -711,9 +735,11 @@
                                 <p class="text-slate-400 italic mb-2">Room Charge inclusive of tax and services only. Extras must be collected from the clients.</p>
                                 
                                 <div class="mt-2 pt-2 border-t border-dashed border-slate-300">
-                                    <p class="text-[#009FE3] font-bold">【入住飯店小叮嚀】</p>
-                                    <p>(1) 響應政府減塑政策，自2023年7月1日起，多數飯店將不再於客房內提供一次性用品，建議旅客自行攜帶。</p>
-                                    <p>(2) 飯店館內全面禁止吸菸（香菸空盒也請勿丟飯店房間垃圾桶）。</p>
+                                    <p class="text-[#009FE3] font-bold mb-1">【入住飯店小叮嚀】</p>
+                                    <p v-if="hotelInfo.customNotes.length === 0" class="text-slate-400 italic">無特別注意事項</p>
+                                    <p v-else v-for="(note, i) in hotelInfo.customNotes" :key="i" class="mb-1">
+                                        ({{ i + 1 }}) {{ note }}
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -776,6 +802,7 @@
 
                 const toastMsg = ref('');
                 const newRoomInput = ref('');
+                const newNoteInput = ref(''); // 新增：用於綁定注意事項輸入框
 
                 const initialData = {
                     hotelName: '', tel: '', address: '',
@@ -783,16 +810,22 @@
                     checkIn: today.value, checkOut: tomorrow, nightsText: '兩天一夜',
                     checkInTime: '15:00', checkOutTime: '11:00',
                     roomList: [], requests: '', selectedTags: ['依房型人數提供早餐'],
+                    // 新增：預設兩條小叮嚀
+                    customNotes: [
+                        '響應政府減塑政策，自2023年7月1日起，多數飯店將不再於客房內提供一次性用品，建議旅客自行攜帶。',
+                        '飯店館內全面禁止吸菸（香菸空盒也請勿丟飯店房間垃圾桶）。'
+                    ],
                     bookedBy: '五福旅行社｜陳侑君', salesContact: '五福旅行社｜', paymentBy: '五福旅行社'
                 };
 
-                const hotelInfo = reactive({ ...initialData });
+                // 將資料深拷貝至 reactive
+                const hotelInfo = reactive(JSON.parse(JSON.stringify(initialData)));
 
                 const clearAllData = () => {
-                    Object.assign(hotelInfo, initialData);
+                    Object.assign(hotelInfo, JSON.parse(JSON.stringify(initialData)));
                     hotelInfo.roomList = [];
                     hotelInfo.selectedTags = ['依房型人數提供早餐'];
-                    showToast("資料已清空");
+                    showToast("資料已重置為預設狀態");
                 };
 
                 const addRoom = () => {
@@ -812,6 +845,16 @@
                     }
                 };
                 const removeCustomTag = (i) => hotelInfo.selectedTags.splice(i, 1);
+
+                // --- 新增：注意事項管理 ---
+                const addNote = () => {
+                    if (newNoteInput.value.trim()) {
+                        hotelInfo.customNotes.push(newNoteInput.value.trim());
+                        newNoteInput.value = '';
+                    }
+                };
+                const removeNote = (i) => hotelInfo.customNotes.splice(i, 1);
+                // -------------------------
 
                 const fullHotelRequestsText = computed(() => hotelInfo.selectedTags.join('、') || '無');
 
@@ -852,22 +895,18 @@
                     return `${d}${n}-${h}確認單.${ext}`;
                 };
 
-                // === 下載 PDF 邏輯 (改為原生列印以保留文字) ===
+                // === 下載 PDF 邏輯 ===
                 const downloadHotelPDF = () => {
                     showToast("準備產出 PDF！請在列印畫面中選擇「另存為 PDF」。");
-                    
-                    // 暫時修改網頁標題，讓匯出的 PDF 能自動帶入我們想要的檔名
                     const originalTitle = document.title;
                     document.title = generateFileName('pdf').replace('.pdf', '');
-                    
                     setTimeout(() => {
                         window.print();
-                        // 開啟列印後將標題改回來
                         document.title = originalTitle;
                     }, 500);
                 };
 
-                // === 下載圖片邏輯 (保留原樣 html2canvas) ===
+                // === 下載圖片邏輯 ===
                 const downloadHotelImage = () => {
                     showToast("圖片產生中...");
                     const node = document.getElementById('hotel-image-node');
@@ -884,6 +923,7 @@
                     toastMsg, hotelInfo, newRoomInput, fullHotelRequestsText,
                     formattedHotelCheckIn, formattedHotelCheckOut, 
                     addRoom, removeRoom, addCustomRequest, removeCustomTag,
+                    newNoteInput, addNote, removeNote, // 暴露給模板使用
                     clearAllData, downloadHotelImage, downloadHotelPDF, today
                 };
             }
