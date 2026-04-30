@@ -107,10 +107,11 @@
             background-position: center;
             background-repeat: no-repeat;
             background-size: contain;
-            opacity: 0.15; /* 變更：調低透明度讓顏色更淡 */
-            z-index: 999; /* 變更：移到最上層避免被其他背景色遮住 */
+            opacity: 0.3; /* 變更：調高一點點透明度，以免完全看不見 */
+            z-index: 999; 
             pointer-events: none;
             filter: grayscale(100%);
+            mix-blend-mode: multiply; /* 新增：色彩增值模式，讓浮水印更像印在紙上且不干擾文字 */
         }
 
         /* 2. 內容層 */
