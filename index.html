@@ -107,8 +107,8 @@
             background-position: center;
             background-repeat: no-repeat;
             background-size: contain;
-            opacity: 0.5; 
-            z-index: 0;
+            opacity: 0.15; /* 變更：調低透明度讓顏色更淡 */
+            z-index: 999; /* 變更：移到最上層避免被其他背景色遮住 */
             pointer-events: none;
             filter: grayscale(100%);
         }
@@ -328,7 +328,7 @@
 
         /* 特別需求框 */
         .requests-box {
-            min-height: 120px; 
+            min-height: 40px; /* 變更：縮小最小高度，使其能自動適應內容大小，節省 A4 空間 */
             font-size: 11px; 
             color: #475569; 
             line-height: 1.6;
